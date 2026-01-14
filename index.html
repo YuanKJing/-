@@ -154,6 +154,21 @@
         }
 
         .log-time { color: #bbb; font-size: 0.75rem; }
+        .log-photo {
+            margin-top: 6px;
+                        }
+
+        .log-photo img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid #ffe0e6;
+            cursor: pointer;
+        }
+        .log-photo img:hover {
+            transform: scale(1.05);
+        }
 
         .btn-delete-log {
             background-color: #fff0f3;
@@ -373,10 +388,13 @@
         const now = new Date();
         const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
         const logEntry = {
-            id: Date.now(), // 唯一ID用于删除
-            time: timeStr,
-            content: `加盐宝贝兑换了奖励项目 #${id}`
-        };
+        id: Date.now(),
+        time: timeStr,
+        content: `加盐宝贝兑换了奖励项目 #${id}`,
+        images: [], // 建议初始化为空数组，因为你之前说想添加“很多图片”
+        note: ""     // 顺便预留一个文字感言位
+    };
+    
         logs.unshift(logEntry);
         localStorage.setItem('flower_logs', JSON.stringify(logs));
         renderLogs();
@@ -390,6 +408,29 @@
             renderLogs();
         }
     }
+    function uploadImage(logId) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+
+        input.onchange = () => {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = e => {
+                const log = logs.find(l => l.id === logId);
+                if (log) {
+                    log.image = e.target.result;
+                    localStorage.setItem('flower_logs', JSON.stringify(logs));
+                    renderLogs();
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        input.click();
+    }
 
     function renderLogs() {
         const logList = document.getElementById('logList');
@@ -399,14 +440,27 @@
         }
         
         logList.innerHTML = logs.map(item => `
-            <div class="log-item">
-                <div class="log-content">
-                    <span>${item.content}</span>
-                    <span class="log-time">${item.time}</span>
+    <div class="log-item">
+        <div class="log-content">
+            <span>${item.content}</span>
+            <span class="log-time">${item.time}</span>
+
+            ${item.image ? `
+                <div class="log-photo">
+                    <img src="${item.image}" onclick="window.open('${item.image}')">
                 </div>
-                <button class="btn-delete-log" onclick="deleteLog(${item.id})" title="删除记录">✕</button>
-            </div>
-        `).join('');
+            ` : `
+                <button class="btn-redeem" style="font-size:0.7rem;padding:4px 10px;margin-top:4px;"
+                    onclick="uploadImage(${item.id})">
+                    上传照片
+                </button>
+            `}
+        </div>
+
+        <button class="btn-delete-log" onclick="deleteLog(${item.id})" title="删除记录">✕</button>
+    </div>
+`).join('');
+
     }
 
     function triggerConfetti() {
